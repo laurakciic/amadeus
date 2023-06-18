@@ -1,17 +1,15 @@
 package hr.kingict.amadeus.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 import java.time.LocalDate;
-import java.util.Objects;
+import java.util.List;
 
 @Entity
 @Table(name = "flights_search")
-public class FlightSearchEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+public class FlightSearchEntity extends BaseEntity {
 
     private String departureCode;
 
@@ -23,21 +21,8 @@ public class FlightSearchEntity {
 
     private Integer adults;
 
-    private LocalDate dateCreated;
-
-    private String userCreated;
-
-    private LocalDate dateUpdated;
-
-    private String userUpdated;
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
+    @OneToMany(mappedBy = "flightSearchEntity")
+    private List<FlightSearchResultEntity> flightSearchResultEntityList;
 
     public String getDepartureCode() {
         return departureCode;
@@ -79,48 +64,11 @@ public class FlightSearchEntity {
         this.adults = adults;
     }
 
-    public LocalDate getDateCreated() {
-        return dateCreated;
+    public List<FlightSearchResultEntity> getFlightSearchResultEntityList() {
+        return flightSearchResultEntityList;
     }
 
-    public void setDateCreated(LocalDate dateCreated) {
-        this.dateCreated = dateCreated;
-    }
-
-    public String getUserCreated() {
-        return userCreated;
-    }
-
-    public void setUserCreated(String userCreated) {
-        this.userCreated = userCreated;
-    }
-
-    public LocalDate getDateUpdated() {
-        return dateUpdated;
-    }
-
-    public void setDateUpdated(LocalDate dateUpdated) {
-        this.dateUpdated = dateUpdated;
-    }
-
-    public String getUserUpdated() {
-        return userUpdated;
-    }
-
-    public void setUserUpdated(String userUpdated) {
-        this.userUpdated = userUpdated;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        FlightSearchEntity that = (FlightSearchEntity) o;
-        return Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
+    public void setFlightSearchResultEntityList(List<FlightSearchResultEntity> flightSearchResultEntityList) {
+        this.flightSearchResultEntityList = flightSearchResultEntityList;
     }
 }

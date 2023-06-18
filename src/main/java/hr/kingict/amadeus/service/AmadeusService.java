@@ -8,8 +8,12 @@ import com.amadeus.resources.Location;
 import hr.kingict.amadeus.dto.FlightSearchResultDto;
 import hr.kingict.amadeus.dto.LocationDto;
 import hr.kingict.amadeus.mapper.FlightOfferSearchToFlightSearchResultDtoMapper;
+import hr.kingict.amadeus.mapper.FlightSearchEntityToFlightSearchResultDtoMapper;
+import hr.kingict.amadeus.mapper.FlightSearchResultDtoToFlightSearchResultMapper;
 import hr.kingict.amadeus.model.FlightSearchEntity;
+import hr.kingict.amadeus.model.FlightSearchResultEntity;
 import hr.kingict.amadeus.repository.FlightSearchEntityRepo;
+import hr.kingict.amadeus.repository.FlightSearchResultRepo;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +39,15 @@ public class AmadeusService {
     @Autowired
     private FlightSearchEntityRepo flightSearchEntityRepo;
 
+    @Autowired
+    private FlightSearchResultRepo flightSearchResultRepo;
+
+    @Autowired
+    private FlightSearchResultDtoToFlightSearchResultMapper flightSearchResultDtoToFlightSearchResultMapper;
+
+    @Autowired
+    private FlightSearchEntityToFlightSearchResultDtoMapper flightSearchEntityToFlightSearchResultDtoMapper;
+
 
     public List<Location> searchAirports(String keyword) {
         LocationDto locationDto = new LocationDto();
@@ -55,6 +68,19 @@ public class AmadeusService {
     public List<FlightSearchResultDto> searchFlights(String originLocationCode, String destinationLocationCode,
                                                      LocalDate departureDate, LocalDate returnDate, Integer adults) {
         try {
+            FlightSearchEntity existingFlightSearch = flightSearchEntityRepo.findOneByDepartureCodeAndDestinationCodeAndDepartureDateAndReturnDateAndAdults
+                    (originLocationCode, destinationLocationCode, departureDate, returnDate, adults);
+
+            if (existingFlightSearch != null) {
+                List<FlightSearchResultEntity> flightSearchResultEntityList = existingFlightSearch.getFlightSearchResultEntityList();
+
+                logger.warn("Fetched data from database.");
+
+                return flightSearchResultEntityList.stream()
+                        .map(flightSearchResultEntity -> flightSearchEntityToFlightSearchResultDtoMapper.map(flightSearchResultEntity))
+                        .toList();
+            }
+
             FlightSearchEntity flightSearchEntity = new FlightSearchEntity();
             flightSearchEntity.setDestinationCode(destinationLocationCode);
             flightSearchEntity.setDepartureCode(originLocationCode);
@@ -82,10 +108,22 @@ public class AmadeusService {
             List<FlightOfferSearch> flightOfferSearchList = Arrays.asList
                     (amadeus.shopping.flightOffersSearch.get(params));
 
-            return flightOfferSearchList
-                    .stream()
-                    .map(flightOfferSearch -> mapper.map(flightOfferSearch))
-                    .toList();
+            List<FlightSearchResultDto> flightSearchResultDtoList =
+                    flightOfferSearchList
+                        .stream()
+                        .map(flightOfferSearch -> mapper.map(flightOfferSearch))
+                        .toList();
+
+            flightSearchResultDtoList.stream()
+                    .map(flightSearchResultDto -> flightSearchResultDtoToFlightSearchResultMapper.map(flightSearchResultDto))
+                    .forEach(flightSearchResultEntity -> {
+                        flightSearchResultEntity.setFlightSearchEntity(flightSearchEntity);
+                        flightSearchResultRepo.save(flightSearchResultEntity);
+                    });
+
+            logger.warn("Fetched data from Amadeus API.");
+
+            return flightSearchResultDtoList;
 
         } catch (Exception e) {
             logger.error("Search flight error", e);
