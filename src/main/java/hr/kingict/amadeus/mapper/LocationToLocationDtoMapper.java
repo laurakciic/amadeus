@@ -5,7 +5,7 @@ import hr.kingict.amadeus.dto.LocationDto;
 import org.springframework.stereotype.Component;
 
 @Component
-public class LocationLocationDtoMapper {
+public class LocationToLocationDtoMapper {
 
     public LocationDto map(Location location) {
         if (location == null) return null;
